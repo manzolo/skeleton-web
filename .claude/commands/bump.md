@@ -20,25 +20,37 @@ NEW_TAG = `v<new version>` (e.g. `v0.1.1`)
 
 Show the user: "Bumping: vCURRENT → NEW_TAG" and ask for confirmation before proceeding.
 
-### 2. Stage and commit pending changes
+### 2. Update VERSION file
+
+Write the new version (without `v` prefix) to the `VERSION` file at the repo root:
+
+```bash
+echo "<new version>" > VERSION
+```
+
+### 3. Stage and commit pending changes
 
 Run: `git status --short`
 
-If there are unstaged/staged changes:
+If there are unstaged/staged changes (including the VERSION file update):
 ```bash
 git add -A
 git commit -m "chore: release $NEW_TAG"
 ```
 
-If the working tree is already clean, skip the commit step.
+If the working tree is already clean after updating VERSION, commit only VERSION:
+```bash
+git add VERSION
+git commit -m "chore: release $NEW_TAG"
+```
 
-### 3. Create git tag
+### 4. Create git tag
 
 ```bash
 git tag -a $NEW_TAG -m "Release $NEW_TAG"
 ```
 
-### 4. Push commit and tag to GitHub
+### 5. Push commit and tag to GitHub
 
 ```bash
 git push origin HEAD
@@ -47,7 +59,7 @@ git push origin $NEW_TAG
 
 This triggers the `release.yml` CI workflow which builds and pushes Docker images to GHCR and Docker Hub automatically.
 
-### 5. Create GitHub Release
+### 6. Create GitHub Release
 
 ```bash
 gh release create $NEW_TAG \
@@ -55,7 +67,7 @@ gh release create $NEW_TAG \
   --generate-notes
 ```
 
-### 6. Report
+### 7. Report
 
 Print a summary:
 - Tag pushed: `$NEW_TAG`

@@ -31,6 +31,11 @@ help:
 	@printf "  $(CYAN)make shell-backend$(RESET) bash into the backend container\n"
 	@printf "\n"
 	@printf "  $(CYAN)make clean$(RESET)         down -v + docker system prune\n"
+	@printf "\n"
+	@printf "$(BOLD)Endpoints$(RESET)\n"
+	@printf "  Swagger UI  http://localhost:$${BACKEND_PORT:-8000}/docs\n"
+	@printf "  ReDoc       http://localhost:$${BACKEND_PORT:-8000}/redoc\n"
+	@printf "  Health      http://localhost:$${BACKEND_PORT:-8000}/health\n"
 
 # ─── lifecycle ───────────────────────────────────────────────────────────────
 

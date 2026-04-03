@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,9 @@ from .routers import auth, permissions, roles, users
 
 settings = get_settings()
 
+_version_file = Path(__file__).resolve().parents[3] / "VERSION"
+_APP_VERSION = _version_file.read_text().strip() if _version_file.exists() else "0.0.0"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,7 +23,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="skeleton-web API",
-    version="0.1.0",
+    version=_APP_VERSION,
+    redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js",
     description="""
 API for the **skeleton-web** template.
 
