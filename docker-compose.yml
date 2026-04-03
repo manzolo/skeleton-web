@@ -28,6 +28,8 @@ services:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
       - ./backend/alembic/versions:/app/alembic/versions
+      - ./backend/pytest.ini:/app/pytest.ini
+      - ./backend/alembic.ini:/app/alembic.ini
     depends_on:
       db:
         condition: service_healthy
