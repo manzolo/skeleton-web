@@ -3,6 +3,8 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_redoc_html
+from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +26,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="skeleton-web API",
     version=_APP_VERSION,
-    redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js",
+    redoc_url=None,  # disabled — served manually below with pinned JS version
     description="""
 API for the **skeleton-web** template.
 
@@ -45,6 +47,16 @@ JWT via `POST /auth/login` → `Bearer <token>`. Use the **Authorize** button ab
     debug=settings.app_debug,
     lifespan=lifespan,
 )
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc() -> HTMLResponse:
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} — ReDoc",
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js",
+        with_google_fonts=False,
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
