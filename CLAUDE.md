@@ -89,6 +89,17 @@ CI then builds and pushes Docker images to GHCR (`ghcr.io/manzolo/<repo>`) and D
 
 **Required repository secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
 
+## OpenAPI
+
+Swagger UI: `http://localhost:8000/docs`  
+ReDoc: `http://localhost:8000/redoc`
+
+Update the committed spec after API changes:
+```bash
+make openapi
+git add docs/openapi.json
+```
+
 ## Architecture
 
 See `docs/architecture.md` for the full design decisions.

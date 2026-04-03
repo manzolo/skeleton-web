@@ -35,7 +35,18 @@ make dev
 ```
 
 All containers start in order: `db → backend → frontend`.  
-Open `http://localhost:5173` — you should see a green "Online" badge.
+The seed runs automatically and creates an admin user.  
+Open `http://localhost:5173` — you should see a green "Online" badge and the users table.
+
+### Default credentials
+
+| Field | Value |
+|---|---|
+| Admin username | `admin` |
+| Admin email | `admin@example.com` |
+| Admin password | `changeme` |
+
+> **Security**: set `ADMIN_PASSWORD=<strong-password>` in your `.env` file before going to production.
 
 ### 4. Rename the project
 
@@ -77,9 +88,17 @@ make test         # pytest + vitest
 make down         # stop all containers
 make migrate      # alembic upgrade head
 make migrate-new  # create a new migration
+make seed         # re-run the seed (idempotent)
 make health       # curl /health
+make openapi      # export OpenAPI spec to docs/openapi.json
 make clean        # down -v + docker prune
 ```
+
+## API
+
+Swagger UI: `http://localhost:8000/docs`  
+ReDoc: `http://localhost:8000/redoc`  
+OpenAPI spec: [`docs/openapi.json`](docs/openapi.json)
 
 ## Claude Code skills
 

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import get_settings
 from .database import get_db
+from .routers import permissions, roles, users
 
 settings = get_settings()
 
@@ -17,8 +18,25 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="skeleton-web",
+    title="skeleton-web API",
     version="0.1.0",
+    description="""
+API for the **skeleton-web** template.
+
+## Default admin credentials
+- **Username**: `admin`
+- **Password**: `changeme` — **change in production** via `ADMIN_PASSWORD` in `.env`
+
+## Patterns demonstrated
+- Simple FK (User → Role)
+- Many-to-many (Role ↔ Permission) with association table
+- Two-level nested response (User → Role → [Permission])
+
+## Authentication
+Not implemented in this template. Add JWT / OAuth2 as a next step.
+    """,
+    contact={"name": "skeleton-web", "url": "https://github.com/manzolo/skeleton-web"},
+    license_info={"name": "MIT"},
     debug=settings.app_debug,
     lifespan=lifespan,
 )
@@ -31,13 +49,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(permissions.router, prefix="/permissions", tags=["permissions"])
+app.include_router(roles.router, prefix="/roles", tags=["roles"])
+app.include_router(users.router, prefix="/users", tags=["users"])
 
-@app.get("/health")
+
+@app.get("/health", tags=["system"])
 async def health(db: AsyncSession = Depends(get_db)) -> dict:
+    """Check API and database connectivity."""
     try:
         await db.execute(text("SELECT 1"))
         db_status = "ok"
-    except Exception:
+    except Exception as _exc:
+        import logging
+        logging.getLogger(__name__).exception("health check DB error: %s", type(_exc).__name__)
         db_status = "degraded"
 
     return {

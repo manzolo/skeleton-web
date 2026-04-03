@@ -1,8 +1,9 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-@pytest.mark.asyncio
+
 async def test_health_ok(client: AsyncClient):
     response = await client.get("/health")
     assert response.status_code == 200
@@ -12,7 +13,6 @@ async def test_health_ok(client: AsyncClient):
     assert "env" in data
 
 
-@pytest.mark.asyncio
 async def test_health_db_ok(client: AsyncClient):
     response = await client.get("/health")
     assert response.status_code == 200
