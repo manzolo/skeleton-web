@@ -31,8 +31,10 @@ def pytest_collection_modifyitems(items: list) -> None:
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
     """Rebuild schema via real Alembic migrations (synchronous — Alembic uses psycopg2).
+    Always starts from a clean state to avoid residue from crashed previous runs.
     Does NOT run the seed: tests create their own data."""
     cfg = Config("/app/alembic.ini")
+    command.downgrade(cfg, "base")  # drop all tables (no-op on a fresh DB)
     command.upgrade(cfg, "head")
     yield
     command.downgrade(cfg, "base")

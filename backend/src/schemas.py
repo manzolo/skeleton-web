@@ -4,9 +4,13 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class PermissionCreate(BaseModel):
-    name: str = Field(description="Human-readable permission name", example="Can edit articles")
+    name: str = Field(
+        description="Human-readable permission name",
+        json_schema_extra={"example": "Can edit articles"},
+    )
     codename: str = Field(
-        description="Unique identifier in slug.action format", example="articles.edit"
+        description="Unique identifier in slug.action format",
+        json_schema_extra={"example": "articles.edit"},
     )
 
 
@@ -19,8 +23,14 @@ class PermissionRead(BaseModel):
 
 
 class RoleCreate(BaseModel):
-    name: str = Field(description="Role display name", example="Editor")
-    slug: str = Field(description="URL-safe unique identifier", example="editor")
+    name: str = Field(
+        description="Role display name",
+        json_schema_extra={"example": "Editor"},
+    )
+    slug: str = Field(
+        description="URL-safe unique identifier",
+        json_schema_extra={"example": "editor"},
+    )
 
 
 class RoleRead(BaseModel):
@@ -35,8 +45,14 @@ class RoleRead(BaseModel):
 
 
 class UserCreate(BaseModel):
-    email: EmailStr = Field(description="Unique email address", example="alice@example.com")
-    username: str = Field(description="Unique username", example="alice")
+    email: EmailStr = Field(
+        description="Unique email address",
+        json_schema_extra={"example": "alice@example.com"},
+    )
+    username: str = Field(
+        description="Unique username",
+        json_schema_extra={"example": "alice"},
+    )
     password: str | None = Field(
         default=None, description="Plain-text password — will be hashed before storage"
     )
