@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  container-healthcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Build and start stack
+        run: docker compose up --build -d
+
+      - name: Wait for backend healthy
+        run: |
+          echo "Waiting for backend..."
+          timeout 120 bash -c '
+            until [ "$(docker inspect --format="{{.State.Health.Status}}" \
+              $(docker compose ps -q backend) 2>/dev/null)" = "healthy" ]; do
+              echo "  backend not healthy yet, waiting..."
+              sleep 3
+            done
+          '
+          echo "Backend is healthy."
+
+      - name: Wait for frontend healthy
+        run: |
+          echo "Waiting for frontend..."
+          timeout 60 bash -c '
+            until curl -sf -o /dev/null http://localhost:5173; do
+              echo "  frontend not ready yet, waiting..."
+              sleep 3
+            done
+          '
+          echo "Frontend is up."
+
+      - name: Assert backend /health returns status ok
+        run: |
+          response=$(curl -sf http://localhost:8000/health)
+          echo "Response: $response"
+          python3 -c "
+          import sys, json
+          d = json.loads('$response')
+          assert d.get('status') == 'ok', f'Expected status=ok, got: {d}'
+          assert d.get('database') == 'ok', f'Expected database=ok, got: {d}'
+          print('Health check passed.')
+          "
+
+      - name: Assert frontend serves HTML
+        run: |
+          content=$(curl -sf http://localhost:5173)
+          echo "$content" | grep -q "<div id=\"root\">" || (echo "Root div not found in frontend response" && exit 1)
+          echo "Frontend serves expected HTML."
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== db logs ===" && docker compose logs db
+          echo "=== backend logs ===" && docker compose logs backend
+          echo "=== frontend logs ===" && docker compose logs frontend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

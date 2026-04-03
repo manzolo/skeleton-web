@@ -1,0 +1,4 @@
+Piano dettagliato: /home/manzolo/.claude/plans/foamy-moseying-honey.md                                                                                                                 
+- Memoria del progetto: registrata, verrà caricata automaticamente nelle sessioni future in questa directory                                                                           
+                                                                                                                                                                                           
+Basterà riaprire Claude Code qui e dire "esegui il piano per skeleton-web session 1" — troverò tutto il contesto e i contenuti file pronti.     
