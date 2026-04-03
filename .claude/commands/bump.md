@@ -67,11 +67,26 @@ gh release create $NEW_TAG \
   --generate-notes
 ```
 
-### 7. Report
+### 7. Rebuild local containers
+
+Rebuild and restart the local stack so the running containers reflect the new version:
+
+```bash
+docker compose up --build -d
+```
+
+Wait for all containers to become healthy, then verify the version is correct:
+
+```bash
+curl -s http://localhost:${BACKEND_PORT:-8000}/openapi.json | python3 -c "import sys,json; d=json.load(sys.stdin); print('version:', d['info']['version'])"
+```
+
+### 8. Report
 
 Print a summary:
 - Tag pushed: `$NEW_TAG`
 - GitHub Release: URL returned by `gh release create`
+- Local stack: rebuilt and running `$NEW_TAG`
 - CI workflow: "Images will be published to GHCR and Docker Hub by the release workflow — check Actions tab"
 
 ## Prerequisites (remind user if missing)
