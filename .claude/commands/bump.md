@@ -22,10 +22,10 @@ Show the user: "Bumping: vCURRENT → NEW_TAG" and ask for confirmation before p
 
 ### 2. Update VERSION file
 
-Write the new version (without `v` prefix) to the `VERSION` file at the repo root:
+Write the new version (without `v` prefix) to `backend/VERSION`:
 
 ```bash
-echo "<new version>" > VERSION
+echo "<new version>" > backend/VERSION
 ```
 
 ### 3. Stage and commit pending changes

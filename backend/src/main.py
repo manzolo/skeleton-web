@@ -12,7 +12,7 @@ from .routers import auth, permissions, roles, users
 
 settings = get_settings()
 
-_version_file = Path(__file__).resolve().parents[3] / "VERSION"
+_version_file = Path(__file__).resolve().parents[1] / "VERSION"
 _APP_VERSION = _version_file.read_text().strip() if _version_file.exists() else "0.0.0"
 
 
