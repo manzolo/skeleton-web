@@ -24,7 +24,7 @@ describe("Login", () => {
 
   it("renders login form", () => {
     renderLogin();
-    expect(screen.getByPlaceholderText("Username")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Username or email")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
   });
@@ -33,7 +33,7 @@ describe("Login", () => {
     vi.spyOn(client, "login").mockResolvedValue({ access_token: "tok123", token_type: "bearer" });
     renderLogin();
 
-    await userEvent.type(screen.getByPlaceholderText("Username"), "admin");
+    await userEvent.type(screen.getByPlaceholderText("Username or email"), "admin");
     await userEvent.type(screen.getByPlaceholderText("Password"), "changeme");
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
@@ -44,7 +44,7 @@ describe("Login", () => {
     vi.spyOn(client, "login").mockRejectedValue(new Error("HTTP 401"));
     renderLogin();
 
-    await userEvent.type(screen.getByPlaceholderText("Username"), "bad");
+    await userEvent.type(screen.getByPlaceholderText("Username or email"), "bad");
     await userEvent.type(screen.getByPlaceholderText("Password"), "wrong");
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
@@ -55,7 +55,7 @@ describe("Login", () => {
     vi.spyOn(client, "login").mockImplementation(() => new Promise(() => {})); // never resolves
     renderLogin();
 
-    await userEvent.type(screen.getByPlaceholderText("Username"), "admin");
+    await userEvent.type(screen.getByPlaceholderText("Username or email"), "admin");
     await userEvent.type(screen.getByPlaceholderText("Password"), "pass");
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
 

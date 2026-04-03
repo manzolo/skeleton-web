@@ -13,10 +13,11 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# Rewrite asyncpg URL to psycopg2 for synchronous alembic migrations
-database_url = os.environ.get("DATABASE_URL", "")
-sync_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-config.set_main_option("sqlalchemy.url", sync_url)
+# ALEMBIC_DATABASE_URL (set by tests) takes priority over DATABASE_URL (app env).
+# Both are converted from asyncpg to psycopg2 if needed.
+_raw_url = os.environ.get("ALEMBIC_DATABASE_URL") or os.environ.get("DATABASE_URL", "")
+_sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://")
+config.set_main_option("sqlalchemy.url", _sync_url)
 
 
 def run_migrations_offline() -> None:

@@ -31,7 +31,7 @@ export default function Login() {
       <h2>Login</h2>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         <input
-          placeholder="Username"
+          placeholder="Username or email"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required

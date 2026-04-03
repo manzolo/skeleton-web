@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -19,7 +19,9 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)) -> To
     Returns 401 if the username does not exist, the password is wrong,
     or the account is inactive.
     """
-    result = await db.execute(select(User).where(User.username == payload.username))
+    result = await db.execute(
+        select(User).where(or_(User.username == payload.username, User.email == payload.username))
+    )
     user = result.scalar_one_or_none()
 
     if user is None or not verify_password(payload.password, user.password_hash or "") or not user.is_active:

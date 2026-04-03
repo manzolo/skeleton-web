@@ -13,24 +13,22 @@ from src.database import get_db
 from src.main import app
 from src.models import Base
 
-# In Docker the CWD is /app; in CI (test.yml) pytest runs from backend/.
-# Resolve alembic.ini relative to this file so both environments work.
+# Resolve paths relative to this file so both Docker (/app) and CI (backend/) work.
 _ALEMBIC_INI = str(Path(__file__).parent.parent / "alembic.ini")
 
-# Allow DATABASE_URL override for CI (postgres service runs on localhost there).
+# Tests run against a dedicated test database — never touch the application DB.
 _DB_HOST = os.environ.get("DB_HOST", "db")
-TEST_DATABASE_URL = f"postgresql+asyncpg://skeleton:changeme@{_DB_HOST}:5432/skeletondb"
-SYNC_DATABASE_URL = f"postgresql://skeleton:changeme@{_DB_HOST}:5432/skeletondb"
+_DB_USER = os.environ.get("DB_USER", "skeleton")
+_DB_PASS = os.environ.get("DB_PASS", "changeme")
+_DB_PORT = os.environ.get("DB_PORT", "5432")
+_TEST_DB = os.environ.get("TEST_POSTGRES_DB", "skeletondb_test")
+
+TEST_DATABASE_URL = f"postgresql+asyncpg://{_DB_USER}:{_DB_PASS}@{_DB_HOST}:{_DB_PORT}/{_TEST_DB}"
+SYNC_DATABASE_URL = f"postgresql://{_DB_USER}:{_DB_PASS}@{_DB_HOST}:{_DB_PORT}/{_TEST_DB}"
 
 
 def pytest_collection_modifyitems(items: list) -> None:
-    """Force all async tests to use the session-scoped event loop.
-
-    This must match asyncio_default_fixture_loop_scope so that tests and fixtures
-    share the same event loop — required to avoid asyncpg 'Future attached to a
-    different loop' errors when connections are created during test execution and
-    then closed in fixture teardown.
-    """
+    """Force all async tests to use the session-scoped event loop."""
     session_scope_mark = pytest.mark.asyncio(loop_scope="session")
     for item in items:
         if isinstance(item, pytest.Function):
@@ -39,19 +37,19 @@ def pytest_collection_modifyitems(items: list) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
-    """Rebuild schema via real Alembic migrations (synchronous — Alembic uses psycopg2).
-    Always starts from a clean state to avoid residue from crashed previous runs.
-    Does NOT run the seed: tests create their own data."""
+    """Rebuild schema on the test database via real Alembic migrations.
+    Always starts clean; does NOT run the seed (tests create their own data)."""
+    os.environ["ALEMBIC_DATABASE_URL"] = SYNC_DATABASE_URL
     cfg = Config(_ALEMBIC_INI)
-    command.downgrade(cfg, "base")  # drop all tables (no-op on a fresh DB)
+    command.downgrade(cfg, "base")  # clean up any partial state from a previous crashed run
     command.upgrade(cfg, "head")
     yield
-    command.downgrade(cfg, "base")
+    # No teardown downgrade — the test DB is dedicated, and the next run will
+    # start with downgrade+upgrade anyway. Dropping here races with clean_tables.
 
 
 @pytest.fixture(scope="session")
 async def test_engine(setup_db):
-    """Session-scoped async engine. NullPool prevents connection sharing between tests."""
     engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool, echo=False)
     yield engine
     await engine.dispose()
@@ -64,13 +62,10 @@ async def session_factory(test_engine):
 
 @pytest.fixture
 async def db_session(session_factory) -> AsyncSession:
-    """Explicit session lifecycle avoids asyncio.shield() in AsyncSession.__aexit__
-    which can cause cross-loop errors when teardown runs between loop iterations."""
     session = session_factory()
     try:
         yield session
     finally:
-        # Use explicit close() which does not go through asyncio.shield()
         await session.close()
 
 
@@ -87,15 +82,13 @@ async def client(db_session: AsyncSession):
 
 @pytest.fixture(autouse=True)
 def clean_tables():
-    """Truncate all data after each test via synchronous psycopg2."""
+    """Truncate all tables after each test via synchronous psycopg2."""
     yield
     conn = psycopg2.connect(SYNC_DATABASE_URL)
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
-            tables = ", ".join(
-                t.name for t in reversed(Base.metadata.sorted_tables)
-            )
+            tables = ", ".join(t.name for t in reversed(Base.metadata.sorted_tables))
             cur.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE")
     finally:
         conn.close()
