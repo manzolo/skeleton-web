@@ -59,6 +59,22 @@ class UserCreate(BaseModel):
     role_id: int | None = Field(default=None, description="Role ID to assign (optional)")
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(
+        description="Account username",
+        json_schema_extra={"example": "admin"},
+    )
+    password: str = Field(
+        description="Plain-text password",
+        json_schema_extra={"example": "changeme"},
+    )
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

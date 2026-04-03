@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "skeleton-web API",
-    "description": "\nAPI for the **skeleton-web** template.\n\n## Default admin credentials\n- **Username**: `admin`\n- **Password**: `changeme` \u2014 **change in production** via `ADMIN_PASSWORD` in `.env`\n\n## Patterns demonstrated\n- Simple FK (User \u2192 Role)\n- Many-to-many (Role \u2194 Permission) with association table\n- Two-level nested response (User \u2192 Role \u2192 [Permission])\n\n## Authentication\nNot implemented in this template. Add JWT / OAuth2 as a next step.\n    ",
+    "description": "\nAPI for the **skeleton-web** template.\n\n## Default admin credentials\n- **Username**: `admin`\n- **Password**: `changeme` \u2014 **change in production** via `ADMIN_PASSWORD` in `.env`\n\n## Patterns demonstrated\n- Simple FK (User \u2192 Role)\n- Many-to-many (Role \u2194 Permission) with association table\n- Two-level nested response (User \u2192 Role \u2192 [Permission])\n\n## Authentication\nJWT via `POST /auth/login` \u2192 `Bearer <token>`. Use the **Authorize** button above to test protected endpoints.\n    ",
     "contact": {
       "name": "skeleton-web",
       "url": "https://github.com/manzolo/skeleton-web"
@@ -13,6 +13,75 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "description": "Validate credentials and return a JWT access token.\n\nReturns 401 if the username does not exist, the password is wrong,\nor the account is inactive.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Me",
+        "description": "Return the authenticated user with role and permissions eager-loaded.",
+        "operationId": "me_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/permissions/": {
       "get": {
         "tags": [
@@ -338,6 +407,28 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "Account username",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Plain-text password",
+            "example": "changeme"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
       "PermissionCreate": {
         "properties": {
           "name": {
@@ -436,6 +527,24 @@
           "slug"
         ],
         "title": "RoleRead"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenResponse"
       },
       "UserCreate": {
         "properties": {
@@ -562,6 +671,17 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/auth/login"
+          }
+        }
       }
     }
   }

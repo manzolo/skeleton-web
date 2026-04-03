@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import get_settings
 from .database import get_db
-from .routers import permissions, roles, users
+from .routers import auth, permissions, roles, users
 
 settings = get_settings()
 
@@ -33,7 +33,7 @@ API for the **skeleton-web** template.
 - Two-level nested response (User → Role → [Permission])
 
 ## Authentication
-Not implemented in this template. Add JWT / OAuth2 as a next step.
+JWT via `POST /auth/login` → `Bearer <token>`. Use the **Authorize** button above to test protected endpoints.
     """,
     contact={"name": "skeleton-web", "url": "https://github.com/manzolo/skeleton-web"},
     license_info={"name": "MIT"},
@@ -49,6 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(permissions.router, prefix="/permissions", tags=["permissions"])
 app.include_router(roles.router, prefix="/roles", tags=["roles"])
 app.include_router(users.router, prefix="/users", tags=["users"])

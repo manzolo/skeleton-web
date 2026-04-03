@@ -47,9 +47,19 @@ make shell-backend  # bash into the backend container
 make clean        # down -v + docker system prune
 ```
 
+## Template Quality Rules
+
+This is a **starting point for new projects** — every choice propagates to all future projects built from it.
+
+- **No suppressed warnings** — if a library emits warnings, replace it with a maintained alternative
+- **No obsolete dependencies** — verify a package is actively maintained before adding it
+- **`docker-compose.override.yml`** is for local dev bind-mounts (auto-loaded); CI uses `docker compose -f docker-compose.yml` to skip it
+- **After changing `requirements.txt` or `package.json`**, always run `docker compose up --build -d` — bind-mounts don't cover installed packages
+- **Alembic migrations belong in git** — never add `backend/alembic/versions/*.py` to `.gitignore`
+
 ## Backend Development
 
-Source files are bind-mounted: `./backend/src → /app/src`  
+Source files are bind-mounted via `docker-compose.override.yml`: `./backend/src → /app/src`  
 Edit files locally; uvicorn reloads automatically.
 
 Editing any file under `backend/src/` triggers automatic pytest via the `.claude/settings.json` hook.
@@ -63,7 +73,7 @@ Editing any file under `backend/src/` triggers automatic pytest via the `.claude
 
 ## Frontend Development
 
-Source files are bind-mounted: `./frontend/src → /app/src`  
+Source files are bind-mounted via `docker-compose.override.yml`: `./frontend/src → /app/src`  
 Vite HMR reloads the browser automatically.
 
 All backend calls go through `/api/*` — Vite proxies them to `http://backend:8000`.

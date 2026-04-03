@@ -17,14 +17,14 @@ jobs:
         run: cp .env.example .env
 
       - name: Build and start stack
-        run: docker compose up --build -d
+        run: docker compose -f docker-compose.yml up --build -d
 
       - name: Run backend tests
-        run: docker compose exec -T backend pytest tests/ -v --tb=short
+        run: docker compose -f docker-compose.yml exec -T backend pytest tests/ -v --tb=short
 
       - name: Run frontend tests
-        run: docker compose exec -T frontend npm run test -- --run
+        run: docker compose -f docker-compose.yml exec -T frontend npm run test -- --run
 
       - name: Show container logs on failure
         if: failure()
-        run: docker compose logs
+        run: docker compose -f docker-compose.yml logs

@@ -1,0 +1,17 @@
+# Loaded automatically by Docker Compose in local development.
+# Bind-mounts source files so changes take effect without rebuilding images.
+# NOT used in CI or production (docker compose -f docker-compose.yml ... skips this file).
+
+services:
+  backend:
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/tests:/app/tests
+      - ./backend/alembic/versions:/app/alembic/versions
+      - ./backend/pytest.ini:/app/pytest.ini
+      - ./backend/alembic.ini:/app/alembic.ini
+
+  frontend:
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/tests:/app/tests

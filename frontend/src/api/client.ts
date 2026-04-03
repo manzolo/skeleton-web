@@ -1,7 +1,15 @@
 const BASE_URL = "/api";
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, init);
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers: { ...authHeaders(), ...init?.headers },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -97,4 +105,36 @@ export function createUser(payload: UserCreate): Promise<User> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+// ---- Auth ------------------------------------------------------------------
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface CurrentUser {
+  id: number;
+  username: string;
+  email: string;
+  is_active: boolean;
+  role: Role | null;
+}
+
+export function login(payload: LoginRequest): Promise<TokenResponse> {
+  return apiFetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchMe(): Promise<CurrentUser> {
+  return apiFetch("/auth/me");
 }

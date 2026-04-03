@@ -17,14 +17,14 @@ jobs:
         run: cp .env.example .env
 
       - name: Build and start stack
-        run: docker compose up --build -d
+        run: docker compose -f docker-compose.yml up --build -d
 
       - name: Wait for backend healthy
         run: |
           echo "Waiting for backend..."
           timeout 120 bash -c '
             until [ "$(docker inspect --format="{{.State.Health.Status}}" \
-              $(docker compose ps -q backend) 2>/dev/null)" = "healthy" ]; do
+              $(docker compose -f docker-compose.yml ps -q backend) 2>/dev/null)" = "healthy" ]; do
               echo "  backend not healthy yet, waiting..."
               sleep 3
             done
@@ -63,10 +63,10 @@ jobs:
       - name: Show container logs on failure
         if: failure()
         run: |
-          echo "=== db logs ===" && docker compose logs db
-          echo "=== backend logs ===" && docker compose logs backend
-          echo "=== frontend logs ===" && docker compose logs frontend
+          echo "=== db logs ===" && docker compose -f docker-compose.yml logs db
+          echo "=== backend logs ===" && docker compose -f docker-compose.yml logs backend
+          echo "=== frontend logs ===" && docker compose -f docker-compose.yml logs frontend
 
       - name: Tear down
         if: always()
-        run: docker compose down -v
+        run: docker compose -f docker-compose.yml down -v

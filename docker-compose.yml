@@ -24,12 +24,6 @@ services:
     env_file: .env
     ports:
       - "${BACKEND_PORT:-8000}:8000"
-    volumes:
-      - ./backend/src:/app/src
-      - ./backend/tests:/app/tests
-      - ./backend/alembic/versions:/app/alembic/versions
-      - ./backend/pytest.ini:/app/pytest.ini
-      - ./backend/alembic.ini:/app/alembic.ini
     depends_on:
       db:
         condition: service_healthy
@@ -50,9 +44,6 @@ services:
     env_file: .env
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/tests:/app/tests
     depends_on:
       backend:
         condition: service_healthy

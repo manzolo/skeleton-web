@@ -1,5 +1,8 @@
 .PHONY: dev test down migrate migrate-new db-shell shell-backend health clean test-backend test-frontend seed openapi
 
+# Local dev uses docker-compose.override.yml automatically (bind-mounts src/ tests/ etc.)
+# CI/prod uses docker-compose.yml alone via: docker compose -f docker-compose.yml ...
+
 dev:
 	docker compose up --build -d
 	docker compose logs -f
