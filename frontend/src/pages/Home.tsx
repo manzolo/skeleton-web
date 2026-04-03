@@ -3,6 +3,13 @@ import { fetchHealth, type HealthResponse } from "../api/client";
 
 type Status = "loading" | "ok" | "degraded" | "error";
 
+const STATUS_STYLE: Record<Status, { label: string; color: string }> = {
+  loading:  { label: "Checking…", color: "var(--muted)" },
+  ok:       { label: "Online",    color: "var(--success)" },
+  degraded: { label: "Degraded",  color: "var(--warning)" },
+  error:    { label: "Offline",   color: "var(--danger)" },
+};
+
 export default function Home() {
   const [status, setStatus] = useState<Status>("loading");
   const [data, setData] = useState<HealthResponse | null>(null);
@@ -16,37 +23,39 @@ export default function Home() {
       .catch(() => setStatus("error"));
   }, []);
 
-  const badge: Record<Status, { label: string; color: string }> = {
-    loading: { label: "Checking...", color: "#888" },
-    ok: { label: "Online", color: "#22c55e" },
-    degraded: { label: "Degraded", color: "#f59e0b" },
-    error: { label: "Offline", color: "#ef4444" },
-  };
-
-  const { label, color } = badge[status];
+  const { label, color } = STATUS_STYLE[status];
 
   return (
-    <div style={{ fontFamily: "monospace", padding: "2rem", maxWidth: 600 }}>
-      <h1>skeleton-web</h1>
-      <p>
-        Backend status:{" "}
-        <span
-          style={{
-            background: color,
-            color: "#fff",
-            padding: "2px 10px",
-            borderRadius: 4,
-            fontWeight: "bold",
-          }}
-        >
-          {label}
-        </span>
+    <div className="page">
+      <h1 style={{ fontSize: "1.5rem", marginBottom: ".25rem" }}>skeleton-web</h1>
+      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
+        FastAPI + React + PostgreSQL template
       </p>
-      {data && (
-        <pre style={{ background: "#f4f4f4", padding: "1rem", borderRadius: 4 }}>
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      )}
+
+      <div className="card" style={{ maxWidth: 400 }}>
+        <p style={{ marginBottom: ".75rem", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--muted)" }}>
+          API status
+        </p>
+        <p className="status-dot" style={{ color, fontSize: "15px" }}>{label}</p>
+        {data && (
+          <pre style={{ marginTop: "1rem", background: "var(--bg)", padding: ".75rem 1rem", borderRadius: "var(--radius)", fontSize: "12px", color: "var(--muted)", border: "1px solid var(--border)" }}>
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        )}
+      </div>
+
+      <div className="card mt-3" style={{ maxWidth: 400 }}>
+        <p style={{ marginBottom: ".75rem", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--muted)" }}>
+          Default credentials
+        </p>
+        <table style={{ width: "auto" }}>
+          <tbody>
+            <tr><td style={{ paddingRight: "1rem", color: "var(--muted)", paddingTop: 4, paddingBottom: 4 }}>Username</td><td><code>admin</code></td></tr>
+            <tr><td style={{ color: "var(--muted)", paddingTop: 4, paddingBottom: 4 }}>Email</td><td><code>admin@example.com</code></td></tr>
+            <tr><td style={{ color: "var(--muted)", paddingTop: 4, paddingBottom: 4 }}>Password</td><td><code>changeme</code></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

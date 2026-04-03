@@ -80,8 +80,8 @@ describe("Users", () => {
     render(<Users />);
     await waitFor(() => expect(screen.getByText("No users yet.")).toBeInTheDocument());
 
-    await userEvent.type(screen.getByPlaceholderText("Email"), "bob@test.com");
-    await userEvent.type(screen.getByPlaceholderText("Username"), "bob");
+    await userEvent.type(screen.getByLabelText("Email"), "bob@test.com");
+    await userEvent.type(screen.getByLabelText("Username"), "bob");
     await userEvent.click(screen.getByRole("button", { name: "Add user" }));
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledWith(

@@ -11,18 +11,16 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ display: "flex", gap: "1rem", padding: "0.75rem 1.5rem", borderBottom: "1px solid #ddd", fontFamily: "monospace" }}>
+    <nav className="navbar">
+      <Link to="/" className="nav-brand">skeleton-web</Link>
       <Link to="/">Home</Link>
       <Link to="/users">Users</Link>
-      <span style={{ marginLeft: "auto" }}>
-        {token ? (
-          <button onClick={handleLogout} style={{ cursor: "pointer", background: "none", border: "none", fontFamily: "monospace", fontSize: "1rem" }}>
-            Logout
-          </button>
-        ) : (
-          <Link to="/login">Login</Link>
-        )}
-      </span>
+      <span className="nav-spacer" />
+      {token ? (
+        <button onClick={handleLogout}>Logout</button>
+      ) : (
+        <Link to="/login">Login</Link>
+      )}
     </nav>
   );
 }

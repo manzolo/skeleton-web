@@ -23,18 +23,10 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-const badge = (text: string, color: string) => (
-  <span
-    key={text}
-    style={{
-      background: color,
-      color: "#fff",
-      padding: "1px 7px",
-      borderRadius: 3,
-      fontSize: "0.75rem",
-      marginRight: 4,
-    }}
-  >
+const PERM_COLORS = ["badge-sky", "badge-green", "badge-amber", "badge-red"];
+
+const badge = (text: string, cls: string) => (
+  <span key={text} className={`badge ${cls}`} style={{ marginRight: 4 }}>
     {text}
   </span>
 );
@@ -70,88 +62,108 @@ export default function Users() {
     }
   }
 
-  if (state.status === "loading") return <p>Loading users…</p>;
-  if (state.status === "error") return <p style={{ color: "#ef4444" }}>Error: {state.message}</p>;
+  if (state.status === "loading") return <p className="text-muted" style={{ padding: "2rem 1.5rem" }}>Loading users…</p>;
+  if (state.status === "error") return <p className="error-msg" style={{ padding: "2rem 1.5rem" }}>Error: {state.message}</p>;
 
   const { users, roles } = state;
 
   return (
-    <div style={{ fontFamily: "monospace", marginTop: "2rem", maxWidth: 700 }}>
-      <h2>Users</h2>
+    <div className="page">
+      <h1 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>Users</h1>
 
-      {users.length === 0 ? (
-        <p style={{ color: "#888" }}>No users yet.</p>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "1.5rem" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #ddd", textAlign: "left" }}>
-              <th style={{ padding: "4px 8px" }}>Username</th>
-              <th style={{ padding: "4px 8px" }}>Email</th>
-              <th style={{ padding: "4px 8px" }}>Role</th>
-              <th style={{ padding: "4px 8px" }}>Permissions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "4px 8px" }}>{u.username}</td>
-                <td style={{ padding: "4px 8px" }}>{u.email}</td>
-                <td style={{ padding: "4px 8px" }}>
-                  {u.role ? badge(u.role.slug, "#6366f1") : <span style={{ color: "#aaa" }}>—</span>}
-                </td>
-                <td style={{ padding: "4px 8px" }}>
-                  {u.role?.permissions.length
-                    ? u.role.permissions.map((p) => badge(p.codename, "#0ea5e9"))
-                    : <span style={{ color: "#aaa" }}>—</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        {users.length === 0 ? (
+          <p className="text-muted">No users yet.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Permissions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.username}</td>
+                    <td>{u.email}</td>
+                    <td>
+                      {u.role ? badge(u.role.slug, "badge-indigo") : <span className="text-muted">—</span>}
+                    </td>
+                    <td>
+                      {u.role?.permissions.length
+                        ? u.role.permissions.map((p, i) => badge(p.codename, PERM_COLORS[i % PERM_COLORS.length]))
+                        : <span className="text-muted">—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      <h3>Add user</h3>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 360 }}>
-        <input
-          required
-          placeholder="Email"
-          type="email"
-          value={form.email}
-          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-          style={{ padding: "4px 8px" }}
-        />
-        <input
-          required
-          placeholder="Username"
-          value={form.username}
-          onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-          style={{ padding: "4px 8px" }}
-        />
-        <input
-          placeholder="Password (optional)"
-          type="password"
-          value={form.password ?? ""}
-          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-          style={{ padding: "4px 8px" }}
-        />
-        <select
-          value={form.role_id ?? ""}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, role_id: e.target.value ? Number(e.target.value) : undefined }))
-          }
-          style={{ padding: "4px 8px" }}
-        >
-          <option value="">No role</option>
-          {roles.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" disabled={submitting} style={{ padding: "6px" }}>
-          {submitting ? "Adding…" : "Add user"}
-        </button>
-      </form>
+      <div className="card" style={{ maxWidth: 420 }}>
+        <p style={{ marginBottom: ".75rem", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--muted)" }}>
+          Add user
+        </p>
+        <form onSubmit={handleSubmit} className="flex-col">
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              required
+              type="email"
+              placeholder="alice@example.com"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              required
+              placeholder="alice"
+              value={form.username}
+              onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">Password (optional)</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={form.password ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="role">Role</label>
+            <select
+              id="role"
+              value={form.role_id ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, role_id: e.target.value ? Number(e.target.value) : undefined }))
+              }
+            >
+              <option value="">No role</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={submitting} style={{ alignSelf: "flex-start" }}>
+            {submitting ? "Adding…" : "Add user"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
