@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import psycopg2
 import pytest
 from alembic import command
@@ -10,8 +13,14 @@ from src.database import get_db
 from src.main import app
 from src.models import Base
 
-TEST_DATABASE_URL = "postgresql+asyncpg://skeleton:changeme@db:5432/skeletondb"
-SYNC_DATABASE_URL = "postgresql://skeleton:changeme@db:5432/skeletondb"
+# In Docker the CWD is /app; in CI (test.yml) pytest runs from backend/.
+# Resolve alembic.ini relative to this file so both environments work.
+_ALEMBIC_INI = str(Path(__file__).parent.parent / "alembic.ini")
+
+# Allow DATABASE_URL override for CI (postgres service runs on localhost there).
+_DB_HOST = os.environ.get("DB_HOST", "db")
+TEST_DATABASE_URL = f"postgresql+asyncpg://skeleton:changeme@{_DB_HOST}:5432/skeletondb"
+SYNC_DATABASE_URL = f"postgresql://skeleton:changeme@{_DB_HOST}:5432/skeletondb"
 
 
 def pytest_collection_modifyitems(items: list) -> None:
@@ -33,7 +42,7 @@ def setup_db():
     """Rebuild schema via real Alembic migrations (synchronous — Alembic uses psycopg2).
     Always starts from a clean state to avoid residue from crashed previous runs.
     Does NOT run the seed: tests create their own data."""
-    cfg = Config("/app/alembic.ini")
+    cfg = Config(_ALEMBIC_INI)
     command.downgrade(cfg, "base")  # drop all tables (no-op on a fresh DB)
     command.upgrade(cfg, "head")
     yield
