@@ -62,23 +62,6 @@ function stockBadge(stock: number) {
   );
 }
 
-const btnGhost: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid var(--border)",
-  color: "var(--text)",
-  borderRadius: "var(--radius)",
-  padding: "4px 10px",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  fontFamily: "inherit",
-};
-
-const btnDanger: React.CSSProperties = {
-  ...btnGhost,
-  border: "1px solid #fca5a5",
-  color: "var(--danger)",
-};
 
 export default function Products() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
@@ -225,7 +208,7 @@ export default function Products() {
                         >
                           Save
                         </button>
-                        <button style={btnGhost} onClick={() => setEditingId(null)}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>
                           Cancel
                         </button>
                       </td>
@@ -245,10 +228,10 @@ export default function Products() {
                       </td>
                       <td>{stockBadge(p.stock)}</td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <button style={{ ...btnGhost, marginRight: 4 }} onClick={() => startEdit(p)}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} style={{ marginRight: 4 }}>
                           Edit
                         </button>
-                        <button style={btnDanger} onClick={() => handleDelete(p.id)}>
+                        <button className="btn btn-danger-outline btn-sm" onClick={() => handleDelete(p.id)}>
                           Delete
                         </button>
                       </td>

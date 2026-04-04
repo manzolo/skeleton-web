@@ -1,5 +1,14 @@
 import { useEffect, useReducer, useState } from "react";
-import { createUser, fetchRoles, fetchUsers, type Role, type User, type UserCreate } from "../api/client";
+import {
+  createUser,
+  deleteUser,
+  fetchRoles,
+  fetchUsers,
+  updateUser,
+  type Role,
+  type User,
+  type UserCreate,
+} from "../api/client";
 
 type State =
   | { status: "loading" }
@@ -9,7 +18,9 @@ type State =
 type Action =
   | { type: "loaded"; users: User[]; roles: Role[] }
   | { type: "error"; message: string }
-  | { type: "add"; user: User };
+  | { type: "add"; user: User }
+  | { type: "update"; user: User }
+  | { type: "remove"; id: number };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -20,6 +31,15 @@ function reducer(state: State, action: Action): State {
     case "add":
       if (state.status !== "ok") return state;
       return { ...state, users: [...state.users, action.user] };
+    case "update":
+      if (state.status !== "ok") return state;
+      return {
+        ...state,
+        users: state.users.map((u) => (u.id === action.user.id ? action.user : u)),
+      };
+    case "remove":
+      if (state.status !== "ok") return state;
+      return { ...state, users: state.users.filter((u) => u.id !== action.id) };
   }
 }
 
@@ -31,10 +51,14 @@ const badge = (text: string, cls: string) => (
   </span>
 );
 
+const EMPTY_FORM: UserCreate = { email: "", username: "", password: "", role_id: undefined };
+
 export default function Users() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
-  const [form, setForm] = useState<UserCreate>({ email: "", username: "", password: "", role_id: undefined });
+  const [form, setForm] = useState<UserCreate>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<UserCreate>(EMPTY_FORM);
 
   useEffect(() => {
     Promise.all([fetchUsers(), fetchRoles()])
@@ -42,7 +66,7 @@ export default function Users() {
       .catch((e: Error) => dispatch({ type: "error", message: e.message }));
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
@@ -54,11 +78,47 @@ export default function Users() {
       };
       const user = await createUser(payload);
       dispatch({ type: "add", user });
-      setForm({ email: "", username: "", password: "", role_id: undefined });
+      setForm(EMPTY_FORM);
     } catch {
       alert("Failed to create user.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(user: User) {
+    setEditingId(user.id);
+    setEditForm({
+      email: user.email,
+      username: user.username,
+      password: "",
+      role_id: user.role?.id ?? undefined,
+    });
+  }
+
+  async function handleUpdate(id: number) {
+    try {
+      const payload: UserCreate = {
+        email: editForm.email,
+        username: editForm.username,
+        ...(editForm.password ? { password: editForm.password } : {}),
+        ...(editForm.role_id ? { role_id: editForm.role_id } : {}),
+      };
+      const user = await updateUser(id, payload);
+      dispatch({ type: "update", user });
+      setEditingId(null);
+    } catch {
+      alert("Failed to update user.");
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm("Delete this user?")) return;
+    try {
+      await deleteUser(id);
+      dispatch({ type: "remove", id });
+    } catch {
+      alert("Failed to delete user.");
     }
   }
 
@@ -83,23 +143,98 @@ export default function Users() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Permissions</th>
+                  <th style={{ width: 130 }}></th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.username}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      {u.role ? badge(u.role.slug, "badge-indigo") : <span className="text-muted">—</span>}
-                    </td>
-                    <td>
-                      {u.role?.permissions.length
-                        ? u.role.permissions.map((p, i) => badge(p.codename, PERM_COLORS[i % PERM_COLORS.length]))
-                        : <span className="text-muted">—</span>}
-                    </td>
-                  </tr>
-                ))}
+                {users.map((u) =>
+                  editingId === u.id ? (
+                    <tr key={u.id} style={{ background: "#f0f4ff" }}>
+                      <td>
+                        <input
+                          aria-label="Edit username"
+                          value={editForm.username}
+                          onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          aria-label="Edit email"
+                          type="email"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <select
+                          aria-label="Edit role"
+                          value={editForm.role_id ?? ""}
+                          onChange={(e) =>
+                            setEditForm((f) => ({
+                              ...f,
+                              role_id: e.target.value ? Number(e.target.value) : undefined,
+                            }))
+                          }
+                        >
+                          <option value="">No role</option>
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          aria-label="New password"
+                          type="password"
+                          placeholder="New password (optional)"
+                          value={editForm.password ?? ""}
+                          onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
+                          style={{ fontSize: 12 }}
+                        />
+                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleUpdate(u.id)}
+                          style={{ marginRight: 4 }}
+                        >
+                          Save
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={u.id}>
+                      <td>{u.username}</td>
+                      <td>{u.email}</td>
+                      <td>
+                        {u.role ? badge(u.role.slug, "badge-indigo") : <span className="text-muted">—</span>}
+                      </td>
+                      <td>
+                        {u.role?.permissions.length
+                          ? u.role.permissions.map((p, i) => badge(p.codename, PERM_COLORS[i % PERM_COLORS.length]))
+                          : <span className="text-muted">—</span>}
+                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => startEdit(u)}
+                          style={{ marginRight: 4 }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-danger-outline btn-sm"
+                          onClick={() => handleDelete(u.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
@@ -110,7 +245,7 @@ export default function Users() {
         <p style={{ marginBottom: ".75rem", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--muted)" }}>
           Add user
         </p>
-        <form onSubmit={handleSubmit} className="flex-col">
+        <form onSubmit={handleCreate} className="flex-col">
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input

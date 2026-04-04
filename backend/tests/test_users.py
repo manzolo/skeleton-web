@@ -64,3 +64,37 @@ async def test_list_users(client: AsyncClient):
     # ordered by username: charlie < dave
     assert users[0]["role"]["slug"] == "editor"
     assert users[1]["role"] is None
+
+
+async def test_update_user(client: AsyncClient):
+    created = (await client.post("/users/", json={"email": "old@test.com", "username": "oldname"})).json()
+    res = await client.put(f"/users/{created['id']}", json={"email": "new@test.com", "username": "newname"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["username"] == "newname"
+    assert data["email"] == "new@test.com"
+    assert data["id"] == created["id"]
+
+
+async def test_update_user_404(client: AsyncClient):
+    res = await client.put("/users/9999", json={"email": "x@test.com", "username": "x"})
+    assert res.status_code == 404
+
+
+async def test_update_user_conflict(client: AsyncClient):
+    await client.post("/users/", json={"email": "a@test.com", "username": "alpha"})
+    b = (await client.post("/users/", json={"email": "b@test.com", "username": "beta"})).json()
+    res = await client.put(f"/users/{b['id']}", json={"email": "a@test.com", "username": "beta"})
+    assert res.status_code == 409
+
+
+async def test_delete_user(client: AsyncClient):
+    created = (await client.post("/users/", json={"email": "del@test.com", "username": "todelete"})).json()
+    res = await client.delete(f"/users/{created['id']}")
+    assert res.status_code == 204
+    assert (await client.get(f"/users/{created['id']}")).status_code == 404
+
+
+async def test_delete_user_404(client: AsyncClient):
+    res = await client.delete("/users/9999")
+    assert res.status_code == 404

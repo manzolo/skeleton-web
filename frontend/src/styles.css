@@ -110,6 +110,10 @@ input:focus, select:focus {
 .btn-primary:hover { background: var(--primary-h); }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 .btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-danger-outline { background: transparent; border: 1px solid #fca5a5; color: var(--danger); }
+.btn-danger-outline:hover { background: #fff1f2; }
 
 /* ── Table ────────────────────────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; }

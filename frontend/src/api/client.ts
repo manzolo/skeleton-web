@@ -11,6 +11,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { ...authHeaders(), ...init?.headers },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -105,6 +106,18 @@ export function createUser(payload: UserCreate): Promise<User> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+export function updateUser(id: number, payload: UserCreate): Promise<User> {
+  return apiFetch(`/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteUser(id: number): Promise<void> {
+  return apiFetch(`/users/${id}`, { method: "DELETE" });
 }
 
 // ---- Auth ------------------------------------------------------------------
