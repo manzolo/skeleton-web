@@ -7,6 +7,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEMOS="$ROOT/demos/products"
 
+# ── 0. Ensure stack is up and healthy ─────────────────────────────────────────
+echo "==> Ensuring stack is up and healthy..."
+docker compose up -d --wait
+
 # ── 1. Backend model ──────────────────────────────────────────────────────────
 echo "==> Appending Product model to backend/src/models.py..."
 python3 - "$ROOT" "$DEMOS" <<'PY'

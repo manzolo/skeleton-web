@@ -45,6 +45,41 @@ function reducer(state: State, action: Action): State {
 
 const EMPTY_FORM: ProductCreate = { name: "", price: 0, stock: 0 };
 
+function stockBadge(stock: number) {
+  const [bg, label] =
+    stock === 0
+      ? ["var(--danger)", "Out of stock"]
+      : stock <= 10
+      ? ["var(--warning)", `${stock} left`]
+      : ["var(--success)", `${stock} in stock`];
+  return (
+    <span
+      className="badge"
+      style={{ background: bg, fontSize: 11, letterSpacing: ".02em" }}
+    >
+      {label}
+    </span>
+  );
+}
+
+const btnGhost: React.CSSProperties = {
+  background: "transparent",
+  border: "1px solid var(--border)",
+  color: "var(--text)",
+  borderRadius: "var(--radius)",
+  padding: "4px 10px",
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const btnDanger: React.CSSProperties = {
+  ...btnGhost,
+  border: "1px solid #fca5a5",
+  color: "var(--danger)",
+};
+
 export default function Products() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const [form, setForm] = useState<ProductCreate>(EMPTY_FORM);
@@ -102,48 +137,59 @@ export default function Products() {
     }
   }
 
-  if (state.status === "loading") return <p className="text-muted" style={{ padding: "2rem 1.5rem" }}>Loading products…</p>;
-  if (state.status === "error") return <p className="error-msg" style={{ padding: "2rem 1.5rem" }}>Error: {state.message}</p>;
+  if (state.status === "loading")
+    return <p className="text-muted" style={{ padding: "2rem 1.5rem" }}>Loading products…</p>;
+  if (state.status === "error")
+    return <p className="error-msg" style={{ padding: "2rem 1.5rem" }}>Error: {state.message}</p>;
 
   const { products } = state;
 
   return (
     <div className="page">
-      <h1 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>Products</h1>
+      <div style={{ marginBottom: "1.75rem" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: ".25rem" }}>Products</h1>
+        <p className="text-muted" style={{ fontSize: 13 }}>
+          {products.length} {products.length === 1 ? "product" : "products"} · full CRUD demo
+        </p>
+      </div>
 
-      <div className="card" style={{ marginBottom: "1.5rem" }}>
+      {/* ── Table ─────────────────────────────────────────────────────── */}
+      <div className="card" style={{ marginBottom: "1.5rem", padding: 0, overflow: "hidden" }}>
         {products.length === 0 ? (
-          <p className="text-muted">No products yet.</p>
+          <div style={{ padding: "2.5rem 1.5rem", textAlign: "center" }}>
+            <p style={{ fontSize: 32, marginBottom: ".5rem" }}>📦</p>
+            <p className="text-muted" style={{ fontSize: 13 }}>No products yet. Add one below.</p>
+          </div>
         ) : (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Description</th>
+                  <th style={{ paddingLeft: "1.25rem" }}>Product</th>
                   <th>Price</th>
                   <th>Stock</th>
-                  <th></th>
+                  <th style={{ width: 120 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((p) =>
                   editingId === p.id ? (
-                    <tr key={p.id}>
-                      <td>
+                    <tr key={p.id} style={{ background: "#f0f4ff" }}>
+                      <td style={{ paddingLeft: "1.25rem" }}>
                         <input
                           aria-label="Edit name"
                           value={editForm.name}
                           onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                          style={{ width: "100%" }}
+                          style={{ marginBottom: 4 }}
                         />
-                      </td>
-                      <td>
                         <input
                           aria-label="Edit description"
+                          placeholder="Description (optional)"
                           value={editForm.description ?? ""}
-                          onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value || undefined }))}
-                          style={{ width: "100%" }}
+                          onChange={(e) =>
+                            setEditForm((f) => ({ ...f, description: e.target.value || undefined }))
+                          }
+                          style={{ fontSize: 12 }}
                         />
                       </td>
                       <td>
@@ -153,8 +199,10 @@ export default function Products() {
                           step="0.01"
                           min="0"
                           value={editForm.price}
-                          onChange={(e) => setEditForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
-                          style={{ width: 80 }}
+                          onChange={(e) =>
+                            setEditForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))
+                          }
+                          style={{ width: 90 }}
                         />
                       </td>
                       <td>
@@ -163,26 +211,46 @@ export default function Products() {
                           type="number"
                           min="0"
                           value={editForm.stock ?? 0}
-                          onChange={(e) => setEditForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))}
-                          style={{ width: 60 }}
+                          onChange={(e) =>
+                            setEditForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))
+                          }
+                          style={{ width: 70 }}
                         />
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <button className="btn btn-primary btn-sm" onClick={() => handleUpdate(p.id)}>Save</button>
-                        {" "}
-                        <button className="btn btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleUpdate(p.id)}
+                          style={{ marginRight: 4 }}
+                        >
+                          Save
+                        </button>
+                        <button style={btnGhost} onClick={() => setEditingId(null)}>
+                          Cancel
+                        </button>
                       </td>
                     </tr>
                   ) : (
                     <tr key={p.id}>
-                      <td>{p.name}</td>
-                      <td>{p.description ?? <span className="text-muted">—</span>}</td>
-                      <td>€{Number(p.price).toFixed(2)}</td>
-                      <td>{p.stock}</td>
+                      <td style={{ paddingLeft: "1.25rem" }}>
+                        <div style={{ fontWeight: 600, marginBottom: 2 }}>{p.name}</div>
+                        {p.description && (
+                          <div className="text-muted" style={{ fontSize: 12 }}>{p.description}</div>
+                        )}
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 600, color: "var(--primary)" }}>
+                          €{Number(p.price).toFixed(2)}
+                        </span>
+                      </td>
+                      <td>{stockBadge(p.stock)}</td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <button className="btn btn-sm" onClick={() => startEdit(p)}>Edit</button>
-                        {" "}
-                        <button className="btn btn-sm" style={{ color: "var(--danger)" }} onClick={() => handleDelete(p.id)}>Delete</button>
+                        <button style={{ ...btnGhost, marginRight: 4 }} onClick={() => startEdit(p)}>
+                          Edit
+                        </button>
+                        <button style={btnDanger} onClick={() => handleDelete(p.id)}>
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   )
@@ -193,8 +261,18 @@ export default function Products() {
         )}
       </div>
 
-      <div className="card" style={{ maxWidth: 420 }}>
-        <p style={{ marginBottom: ".75rem", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--muted)" }}>
+      {/* ── Add form ──────────────────────────────────────────────────── */}
+      <div className="card" style={{ maxWidth: 480 }}>
+        <p
+          style={{
+            marginBottom: "1rem",
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: ".07em",
+            color: "var(--muted)",
+          }}
+        >
           Add product
         </p>
         <form onSubmit={handleCreate} className="flex-col">
@@ -203,7 +281,7 @@ export default function Products() {
             <input
               id="name"
               required
-              placeholder="Widget"
+              placeholder="Widget Pro"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
@@ -212,38 +290,46 @@ export default function Products() {
             <label htmlFor="description">Description</label>
             <input
               id="description"
-              placeholder="Optional description"
+              placeholder="Short description (optional)"
               value={form.description ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value || undefined }))}
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="price">Price</label>
-            <input
-              id="price"
-              required
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="9.99"
-              value={form.price}
-              onChange={(e) => setForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+            <div className="form-group">
+              <label htmlFor="price">Price (€)</label>
+              <input
+                id="price"
+                required
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="9.99"
+                value={form.price || ""}
+                onChange={(e) => setForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="stock">Stock</label>
+              <input
+                id="stock"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={form.stock ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="stock">Stock</label>
-            <input
-              id="stock"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={form.stock ?? 0}
-              onChange={(e) => setForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))}
-            />
+          <div>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={submitting}
+            >
+              {submitting ? "Adding…" : "Add product"}
+            </button>
           </div>
-          <button type="submit" className="btn btn-primary btn-sm" disabled={submitting} style={{ alignSelf: "flex-start" }}>
-            {submitting ? "Adding…" : "Add product"}
-          </button>
         </form>
       </div>
     </div>

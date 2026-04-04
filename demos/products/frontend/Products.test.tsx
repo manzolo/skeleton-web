@@ -26,7 +26,7 @@ describe("Products", () => {
     await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
     expect(screen.getByText("A useful widget")).toBeInTheDocument();
     expect(screen.getByText("€9.99")).toBeInTheDocument();
-    expect(screen.getByText("100")).toBeInTheDocument();
+    expect(screen.getByText("100 in stock")).toBeInTheDocument();
   });
 
   it("shows empty state when no products", async () => {
@@ -34,7 +34,7 @@ describe("Products", () => {
 
     render(<Products />);
 
-    await waitFor(() => expect(screen.getByText("No products yet.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("No products yet. Add one below.")).toBeInTheDocument());
   });
 
   it("creates a product via form and appends to list", async () => {
@@ -50,11 +50,11 @@ describe("Products", () => {
     const createSpy = vi.spyOn(client, "createProduct").mockResolvedValue(newProduct);
 
     render(<Products />);
-    await waitFor(() => expect(screen.getByText("No products yet.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("No products yet. Add one below.")).toBeInTheDocument());
 
     await userEvent.type(screen.getByLabelText("Name"), "Gadget");
-    await userEvent.clear(screen.getByLabelText("Price"));
-    await userEvent.type(screen.getByLabelText("Price"), "19.99");
+    await userEvent.clear(screen.getByLabelText("Price (€)"));
+    await userEvent.type(screen.getByLabelText("Price (€)"), "19.99");
     await userEvent.click(screen.getByRole("button", { name: "Add product" }));
 
     await waitFor(() =>
@@ -116,6 +116,6 @@ describe("Products", () => {
 
     await waitFor(() => expect(deleteSpy).toHaveBeenCalledWith(mockProduct.id));
     await waitFor(() => expect(screen.queryByText("Widget")).not.toBeInTheDocument());
-    expect(screen.getByText("No products yet.")).toBeInTheDocument();
+    expect(screen.getByText("No products yet. Add one below.")).toBeInTheDocument();
   });
 });
