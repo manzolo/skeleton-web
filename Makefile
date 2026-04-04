@@ -1,4 +1,5 @@
-.PHONY: help dev up build down logs restart test test-backend test-frontend \
+.PHONY: help dev up build down logs restart ps test test-backend test-frontend \
+        lint lint-backend lint-frontend \
         migrate migrate-new db-shell shell-backend health seed openapi clean \
         demo demo-clean
 
@@ -17,10 +18,14 @@ help:
 	@printf "  $(CYAN)make down$(RESET)          stop and remove containers\n"
 	@printf "  $(CYAN)make restart$(RESET)       down + up\n"
 	@printf "  $(CYAN)make logs$(RESET)          follow all container logs\n"
+	@printf "  $(CYAN)make ps$(RESET)            show container status\n"
 	@printf "\n"
 	@printf "  $(CYAN)make test$(RESET)          run backend + frontend tests\n"
 	@printf "  $(CYAN)make test-backend$(RESET)  pytest inside backend container\n"
 	@printf "  $(CYAN)make test-frontend$(RESET) vitest inside frontend container\n"
+	@printf "  $(CYAN)make lint$(RESET)          ruff + eslint\n"
+	@printf "  $(CYAN)make lint-backend$(RESET)  ruff check src/ tests/\n"
+	@printf "  $(CYAN)make lint-frontend$(RESET) eslint src/\n"
 	@printf "\n"
 	@printf "  $(CYAN)make migrate$(RESET)       alembic upgrade head\n"
 	@printf "  $(CYAN)make migrate-new$(RESET)   create a new migration (prompts for name)\n"
@@ -62,6 +67,9 @@ restart: down up
 logs:
 	docker compose logs -f
 
+ps:
+	docker compose ps
+
 # ─── tests ───────────────────────────────────────────────────────────────────
 
 test: test-backend test-frontend
@@ -71,6 +79,14 @@ test-backend:
 
 test-frontend:
 	docker compose exec -T frontend npm run test -- --run
+
+lint: lint-backend lint-frontend
+
+lint-backend:
+	docker compose exec -T backend ruff check src/ tests/
+
+lint-frontend:
+	docker compose exec -T frontend npm run lint
 
 # ─── database ────────────────────────────────────────────────────────────────
 

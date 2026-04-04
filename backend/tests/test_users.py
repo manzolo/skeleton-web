@@ -66,6 +66,19 @@ async def test_list_users(client: AsyncClient):
     assert users[1]["role"] is None
 
 
+async def test_list_users_pagination(client: AsyncClient):
+    for i in range(5):
+        await client.post("/users/", json={"email": f"u{i}@test.com", "username": f"user{i}"})
+    # limit
+    result = (await client.get("/users/?limit=2")).json()
+    assert len(result) == 2
+    # skip
+    all_users = (await client.get("/users/")).json()
+    skipped = (await client.get("/users/?skip=1")).json()
+    assert len(skipped) == 4
+    assert skipped[0]["username"] == all_users[1]["username"]
+
+
 async def test_update_user(client: AsyncClient):
     created = (await client.post("/users/", json={"email": "old@test.com", "username": "oldname"})).json()
     res = await client.put(f"/users/{created['id']}", json={"email": "new@test.com", "username": "newname"})

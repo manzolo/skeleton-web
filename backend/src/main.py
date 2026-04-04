@@ -1,16 +1,23 @@
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import get_settings
 from .database import get_db
 from .routers import auth, permissions, roles, users
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -66,6 +73,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error on %s %s", request.method, request.url)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(permissions.router, prefix="/permissions", tags=["permissions"])
 app.include_router(roles.router, prefix="/roles", tags=["roles"])
@@ -79,8 +92,7 @@ async def health(db: AsyncSession = Depends(get_db)) -> dict:
         await db.execute(text("SELECT 1"))
         db_status = "ok"
     except Exception as _exc:
-        import logging
-        logging.getLogger(__name__).exception("health check DB error: %s", type(_exc).__name__)
+        logger.exception("health check DB error: %s", type(_exc).__name__)
         db_status = "degraded"
 
     return {

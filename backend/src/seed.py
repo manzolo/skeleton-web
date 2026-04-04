@@ -14,6 +14,7 @@ import asyncio
 import os
 
 from sqlalchemy import insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import AsyncSessionLocal
 from .models import Permission, Role, User, role_permissions
@@ -31,10 +32,8 @@ BASE_PERMISSIONS = [
 ]
 
 
-async def _seed(db: "AsyncSession") -> None:
+async def _seed(db: AsyncSession) -> None:
     """Core seed logic — operates on the given session."""
-    from sqlalchemy.ext.asyncio import AsyncSession  # local import avoids circular
-
     # 1. Create base permissions (skip if already exist)
     perms: dict[str, Permission] = {}
     for name, codename in BASE_PERMISSIONS:
@@ -79,7 +78,7 @@ async def _seed(db: "AsyncSession") -> None:
     print(f"[seed] Done — admin: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
 
 
-async def run(db: "AsyncSession | None" = None) -> None:
+async def run(db: AsyncSession | None = None) -> None:
     """Run the seed. If *db* is provided the caller's session is used (useful in
     tests); otherwise a new session is opened from AsyncSessionLocal."""
     if db is not None:

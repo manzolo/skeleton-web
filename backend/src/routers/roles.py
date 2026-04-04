@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,13 +11,18 @@ from ..models import Permission, Role, role_permissions
 from ..schemas import RoleCreate, RoleRead
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=list[RoleRead])
-async def list_roles(db: AsyncSession = Depends(get_db)) -> list[Role]:
+async def list_roles(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+) -> list[Role]:
     """Return all roles with their assigned permissions."""
     result = await db.execute(
-        select(Role).options(selectinload(Role.permissions)).order_by(Role.name)
+        select(Role).options(selectinload(Role.permissions)).order_by(Role.name).offset(skip).limit(limit)
     )
     return list(result.scalars().all())
 
@@ -27,6 +34,7 @@ async def create_role(
     """Create a new role. Name and slug must be unique."""
     role = Role(**payload.model_dump())
     db.add(role)
+    logger.info("Creating role %s", payload.slug)
     try:
         await db.flush()
         await db.refresh(role, ["permissions"])

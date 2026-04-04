@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,15 +12,20 @@ from ..schemas import UserCreate, UserRead
 from ..security import hash_password
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 _user_load = [selectinload(User.role).selectinload(Role.permissions)]
 
 
 @router.get("/", response_model=list[UserRead])
-async def list_users(db: AsyncSession = Depends(get_db)) -> list[User]:
+async def list_users(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+) -> list[User]:
     """Return all users with their role and permissions."""
     result = await db.execute(
-        select(User).options(*_user_load).order_by(User.username)
+        select(User).options(*_user_load).order_by(User.username).offset(skip).limit(limit)
     )
     return list(result.scalars().all())
 
@@ -33,6 +40,7 @@ async def create_user(
         data["password_hash"] = hash_password(payload.password)
     user = User(**data)
     db.add(user)
+    logger.info("Creating user %s", payload.username)
     try:
         await db.flush()
         await db.refresh(user, ["role"])
@@ -72,6 +80,7 @@ async def update_user(
         data["password_hash"] = hash_password(payload.password)
     for key, value in data.items():
         setattr(user, key, value)
+    logger.info("Updating user id=%s", user_id)
     try:
         await db.flush()
         await db.refresh(user, ["role"])
@@ -90,5 +99,6 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)) -> None:
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
+    logger.info("Deleting user id=%s", user_id)
     await db.delete(user)
     await db.flush()
