@@ -1,5 +1,6 @@
 .PHONY: help dev up build down logs restart test test-backend test-frontend \
-        migrate migrate-new db-shell shell-backend health seed openapi clean
+        migrate migrate-new db-shell shell-backend health seed openapi clean \
+        demo demo-clean
 
 # ─── colours ────────────────────────────────────────────────────────────────
 BOLD  := \033[1m
@@ -31,6 +32,9 @@ help:
 	@printf "  $(CYAN)make shell-backend$(RESET) bash into the backend container\n"
 	@printf "\n"
 	@printf "  $(CYAN)make clean$(RESET)         down -v + docker system prune\n"
+	@printf "\n"
+	@printf "  $(CYAN)make demo$(RESET)          apply Products demo feature on a fresh clone\n"
+	@printf "  $(CYAN)make demo-clean$(RESET)    undo Products demo and restore original state\n"
 	@printf "\n"
 	@printf "$(BOLD)Endpoints$(RESET)\n"
 	@printf "  Swagger UI  http://localhost:$${BACKEND_PORT:-8000}/docs\n"
@@ -100,3 +104,11 @@ openapi:
 clean:
 	docker compose down -v --remove-orphans
 	docker system prune -f
+
+# ─── demo ─────────────────────────────────────────────────────────────────────
+
+demo:
+	@bash scripts/demo-products.sh
+
+demo-clean:
+	@bash scripts/demo-products-clean.sh

@@ -45,7 +45,31 @@ make health       # curl /health and pretty-print JSON
 make db-shell     # psql into the database
 make shell-backend  # bash into the backend container
 make clean        # down -v + docker system prune
+make demo         # apply Products demo feature on a fresh clone
+make demo-clean   # undo Products demo and restore original state
 ```
+
+## Products Demo
+
+`demos/products/` contains a self-contained example of a new entity (`Product`) that demonstrates the full development workflow: Alembic migration, FastAPI CRUD endpoints, React page with form.
+
+**Files involved:**
+- `demos/products/backend_model.py` — `Product` SQLAlchemy model (appended to `models.py`)
+- `demos/products/routers/products.py` — FastAPI router with Pydantic schemas
+- `demos/products/tests/test_products.py` — pytest-asyncio integration tests
+- `demos/products/frontend/Products.tsx` — React page
+- `demos/products/frontend/Products.test.tsx` — Vitest tests
+- `demos/products/frontend/api_client.ts` — API client additions (appended to `client.ts`)
+- `scripts/demo-products.sh` — idempotent script that applies all changes + runs migrations + tests
+- `scripts/demo-products-clean.sh` — reverses all changes
+- `.github/workflows/demo.yml` — CI that applies demo and smoke-tests the API
+- `docs/demo-products.md` — step-by-step tutorial
+
+**When adding new template features, verify the demo still works:**
+- If you change `backend/src/models.py`, ensure `demos/products/backend_model.py` still appends cleanly (it inherits `Base`, `Mapped`, `mapped_column`, `String`, `DateTime` from the models already imported)
+- If you change `backend/src/main.py` router imports or `app.include_router` calls, update `scripts/demo-products.sh` and `scripts/demo-products-clean.sh` — the scripts patch those exact lines
+- If you change `frontend/src/App.tsx` or `frontend/src/components/Navbar.tsx` structure, update the corresponding Python string replacement in `scripts/demo-products.sh`
+- After any structural change to the above files, run `make demo && make demo-clean` to confirm idempotency
 
 ## Template Quality Rules
 
