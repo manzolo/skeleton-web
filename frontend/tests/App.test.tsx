@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as client from "../src/api/client";
 import { AuthProvider } from "../src/context/AuthContext";
 import Navbar from "../src/components/Navbar";
@@ -11,15 +11,23 @@ import Users from "../src/pages/Users";
 function renderWithRouter(path: string, element: React.ReactElement) {
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={[path]}>{element}</MemoryRouter>
+      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        {element}
+      </MemoryRouter>
     </AuthProvider>
   );
 }
 
 describe("Routing", () => {
-  it("/ renders Home", () => {
+  beforeEach(() => {
+    vi.spyOn(client, "fetchHealth").mockResolvedValue({ status: "ok", database: "ok", env: "test" });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("/ renders Home", async () => {
     renderWithRouter("/", <Home />);
     expect(screen.getByRole("heading", { name: /skeleton-web/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Online")).toBeInTheDocument());
   });
 
   it("/users renders Users", async () => {
@@ -41,7 +49,7 @@ describe("Navbar", () => {
   it("shows Login link when not authenticated", () => {
     render(
       <AuthProvider>
-        <MemoryRouter><Navbar /></MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Navbar /></MemoryRouter>
       </AuthProvider>
     );
     expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
@@ -52,7 +60,7 @@ describe("Navbar", () => {
     localStorage.setItem("token", "fake-token");
     render(
       <AuthProvider>
-        <MemoryRouter><Navbar /></MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Navbar /></MemoryRouter>
       </AuthProvider>
     );
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();

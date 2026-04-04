@@ -8,7 +8,7 @@ import Users from "./pages/Users";
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Navbar />
         <div style={{ fontFamily: "monospace", padding: "2rem", maxWidth: 700 }}>
           <Routes>

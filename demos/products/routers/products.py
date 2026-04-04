@@ -55,3 +55,30 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_db)) -> Pr
     if not product:
         raise HTTPException(status_code=404, detail="Product not found.")
     return product
+
+
+@router.put("/{product_id}", response_model=ProductRead)
+async def update_product(
+    product_id: int, payload: ProductCreate, db: AsyncSession = Depends(get_db)
+) -> Product:
+    """Replace an existing product. 404 if not found."""
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    for key, value in payload.model_dump().items():
+        setattr(product, key, value)
+    await db.flush()
+    await db.refresh(product)
+    return product
+
+
+@router.delete("/{product_id}", status_code=204)
+async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)) -> None:
+    """Delete a product. 404 if not found."""
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    await db.delete(product)
+    await db.flush()

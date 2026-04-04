@@ -27,3 +27,15 @@ export function createProduct(payload: ProductCreate): Promise<Product> {
     body: JSON.stringify(payload),
   });
 }
+
+export function updateProduct(id: number, payload: ProductCreate): Promise<Product> {
+  return apiFetch(`/products/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProduct(id: number): Promise<void> {
+  return apiFetch(`/products/${id}`, { method: "DELETE" });
+}

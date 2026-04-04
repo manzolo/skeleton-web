@@ -64,4 +64,58 @@ describe("Products", () => {
     );
     await waitFor(() => expect(screen.getByText("Gadget")).toBeInTheDocument());
   });
+
+  it("enters edit mode and saves updated product", async () => {
+    const updated: client.Product = { ...mockProduct, name: "Updated Widget", stock: 50 };
+    vi.spyOn(client, "fetchProducts").mockResolvedValue([mockProduct]);
+    const updateSpy = vi.spyOn(client, "updateProduct").mockResolvedValue(updated);
+
+    render(<Products />);
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+    const nameInput = screen.getByLabelText("Edit name");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Updated Widget");
+
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(updateSpy).toHaveBeenCalledWith(
+        mockProduct.id,
+        expect.objectContaining({ name: "Updated Widget" })
+      )
+    );
+    await waitFor(() => expect(screen.getByText("Updated Widget")).toBeInTheDocument());
+  });
+
+  it("cancels edit without saving", async () => {
+    vi.spyOn(client, "fetchProducts").mockResolvedValue([mockProduct]);
+
+    render(<Products />);
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByLabelText("Edit name")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByLabelText("Edit name")).not.toBeInTheDocument();
+    expect(screen.getByText("Widget")).toBeInTheDocument();
+  });
+
+  it("deletes a product after confirmation", async () => {
+    vi.spyOn(client, "fetchProducts").mockResolvedValue([mockProduct]);
+    const deleteSpy = vi.spyOn(client, "deleteProduct").mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<Products />);
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(deleteSpy).toHaveBeenCalledWith(mockProduct.id));
+    await waitFor(() => expect(screen.queryByText("Widget")).not.toBeInTheDocument());
+    expect(screen.getByText("No products yet.")).toBeInTheDocument();
+  });
 });
