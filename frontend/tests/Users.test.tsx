@@ -105,7 +105,7 @@ describe("Users", () => {
     await userEvent.clear(usernameInput);
     await userEvent.type(usernameInput, "admin2");
 
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() =>
       expect(updateSpy).toHaveBeenCalledWith(

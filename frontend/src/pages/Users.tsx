@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import {
   createUser,
   deleteUser,
@@ -143,70 +143,13 @@ export default function Users() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Permissions</th>
-                  <th style={{ width: 130 }}></th>
+                  <th style={{ width: 120 }}></th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) =>
-                  editingId === u.id ? (
-                    <tr key={u.id} style={{ background: "#f0f4ff" }}>
-                      <td>
-                        <input
-                          aria-label="Edit username"
-                          value={editForm.username}
-                          onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          aria-label="Edit email"
-                          type="email"
-                          value={editForm.email}
-                          onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          aria-label="Edit role"
-                          value={editForm.role_id ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({
-                              ...f,
-                              role_id: e.target.value ? Number(e.target.value) : undefined,
-                            }))
-                          }
-                        >
-                          <option value="">No role</option>
-                          {roles.map((r) => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          aria-label="New password"
-                          type="password"
-                          placeholder="New password (optional)"
-                          value={editForm.password ?? ""}
-                          onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
-                          style={{ fontSize: 12 }}
-                        />
-                      </td>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleUpdate(u.id)}
-                          style={{ marginRight: 4 }}
-                        >
-                          Save
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={u.id}>
+                {users.map((u) => (
+                  <React.Fragment key={u.id}>
+                    <tr style={editingId === u.id ? { background: "#f8faff" } : undefined}>
                       <td>{u.username}</td>
                       <td>{u.email}</td>
                       <td>
@@ -220,10 +163,10 @@ export default function Users() {
                       <td style={{ whiteSpace: "nowrap" }}>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => startEdit(u)}
+                          onClick={() => editingId === u.id ? setEditingId(null) : startEdit(u)}
                           style={{ marginRight: 4 }}
                         >
-                          Edit
+                          {editingId === u.id ? "Cancel" : "Edit"}
                         </button>
                         <button
                           className="btn btn-danger-outline btn-sm"
@@ -233,8 +176,77 @@ export default function Users() {
                         </button>
                       </td>
                     </tr>
-                  )
-                )}
+
+                    {editingId === u.id && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{
+                            padding: "1rem 1.25rem 1.25rem",
+                            background: "#f0f4ff",
+                            borderTop: "2px solid var(--primary)",
+                          }}
+                        >
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: ".75rem", marginBottom: ".75rem" }}>
+                            <div className="form-group">
+                              <label>Username</label>
+                              <input
+                                aria-label="Edit username"
+                                value={editForm.username}
+                                onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Email</label>
+                              <input
+                                aria-label="Edit email"
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Role</label>
+                              <select
+                                aria-label="Edit role"
+                                value={editForm.role_id ?? ""}
+                                onChange={(e) =>
+                                  setEditForm((f) => ({
+                                    ...f,
+                                    role_id: e.target.value ? Number(e.target.value) : undefined,
+                                  }))
+                                }
+                              >
+                                <option value="">No role</option>
+                                {roles.map((r) => (
+                                  <option key={r.id} value={r.id}>{r.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: ".75rem", marginBottom: "1rem" }}>
+                            <div className="form-group">
+                              <label>New password</label>
+                              <input
+                                aria-label="New password"
+                                type="password"
+                                placeholder="Leave blank to keep current"
+                                value={editForm.password ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleUpdate(u.id)}
+                          >
+                            Save changes
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
               </tbody>
             </table>
           </div>
