@@ -22,57 +22,103 @@ cp .env.example .env
 
 ---
 
-## 2. Start without bind-mounts
+## 2. Deployment options
 
-The `docker-compose.override.yml` file mounts local source directories into the containers — useful for development, but not suitable for production. Skip it:
+### Option A — Build on the server (first deploy or no Docker Hub yet)
+
+Suitable for: initial deployment before publishing a release, private repos.
 
 ```bash
-docker compose -f docker-compose.yml up -d
+git clone <repo-url> /srv/myapp && cd /srv/myapp
+cp .env.example .env && $EDITOR .env
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-This uses only the images built from `Dockerfile`, with no live code injection.
+This skips `docker-compose.override.yml` (which mounts local source for dev), builds
+production images from the Dockerfiles, and starts all services.
+
+### Option B — Pull pre-built images from Docker Hub (recommended for updates)
+
+After the first `git tag v*` push, CI publishes:
+- `manzolo/<repo>-backend:latest`
+- `manzolo/<repo>-frontend:latest`
+
+On the server you only need `docker-compose.server.yml` and `.env` — no source code:
+
+```bash
+mkdir /srv/myapp && cd /srv/myapp
+# copy docker-compose.server.yml and .env from the repo (or curl from GitHub raw)
+docker compose -f docker-compose.server.yml pull
+docker compose -f docker-compose.server.yml up -d
+```
+
+To update after a new release:
+```bash
+docker compose -f docker-compose.server.yml pull
+docker compose -f docker-compose.server.yml up -d
+```
 
 ---
 
-## 3. Run migrations
+## 3. Container names and reverse proxy
 
-```bash
-docker compose -f docker-compose.yml exec backend alembic upgrade head
+All services have predictable container names (`<project>-db`, `<project>-backend`,
+`<project>-frontend`). The frontend container exposes **no host ports** — route traffic
+through a reverse proxy.
+
+**Nginx Proxy Manager / Traefik / Caddy:**
+Point the proxy host to `skeleton-web-frontend` on port `80`.
+
+If you prefer a localhost-only port instead of network sharing, add to the frontend service:
+```yaml
+ports:
+  - "127.0.0.1:8080:80"
 ```
 
-Always run migrations before starting traffic on a new deployment or after an upgrade.
-
----
-
-## 4. Reverse proxy (nginx example)
-
-Place the API and frontend behind a reverse proxy so both are served from the same origin:
-
+**nginx example config:**
 ```nginx
 server {
     listen 80;
     server_name myapp.example.com;
 
-    # Frontend (Vite built assets served by nginx or Node)
     location / {
-        proxy_pass http://frontend:5173;
+        proxy_pass http://skeleton-web-frontend:80;
         proxy_set_header Host $host;
-    }
-
-    # Backend API
-    location /api/ {
-        proxy_pass http://backend:8000/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
 
 ---
 
+## 4. Private seed data (gitignored)
+
+To pre-load data that must not be committed (personal info, pricing, etc.),
+create `backend/private_seed.py` locally and copy it to the server:
+
+```python
+# backend/private_seed.py  (listed in .gitignore)
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.models import SomeModel
+
+async def seed(db: AsyncSession) -> None:
+    db.add(SomeModel(name="Private record"))
+```
+
+The seed runner imports this file automatically if present. Safe to omit.
+
+---
+
 ## 5. Health and readiness probes
 
-The `/health` endpoint checks database connectivity and is suitable for Kubernetes liveness/readiness probes:
+The `/health` endpoint checks database connectivity:
+
+```bash
+curl http://localhost:8000/health
+# {"status": "ok", "database": "ok", "env": "production"}
+```
+
+Suitable for Kubernetes liveness/readiness probes:
 
 ```yaml
 livenessProbe:
@@ -81,19 +127,6 @@ livenessProbe:
     port: 8000
   initialDelaySeconds: 10
   periodSeconds: 30
-
-readinessProbe:
-  httpGet:
-    path: /health
-    port: 8000
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
-
-Expected response when healthy:
-
-```json
-{"status": "ok", "database": "ok", "env": "production"}
 ```
 
 ---
@@ -107,3 +140,4 @@ Expected response when healthy:
 - [ ] HTTPS is terminated at the reverse proxy
 - [ ] Database is not exposed on a public port
 - [ ] Docker images are rebuilt from a tagged release, not `latest`
+- [ ] `private_seed.py` (if used) is copied to the server but never committed

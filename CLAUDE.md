@@ -119,9 +119,55 @@ make test-frontend  # vitest --run inside the frontend container
 ```
 
 The bump workflow: commits pending changes → creates git tag → pushes to GitHub → creates GitHub Release.  
-CI then builds and pushes Docker images to GHCR (`ghcr.io/manzolo/<repo>`) and Docker Hub (`manzolo/<repo>`).
+CI then builds and pushes Docker images to GHCR (`ghcr.io/manzolo/<repo>`) and Docker Hub (`manzolo/<repo>`):
+- `manzolo/<repo>-backend:latest` and `manzolo/<repo>-backend:v1.2.3`
+- `manzolo/<repo>-frontend:latest` and `manzolo/<repo>-frontend:v1.2.3`
 
 **Required repository secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+
+## Server Deploy
+
+### First deploy (before first release — build on the server)
+
+```bash
+# On the server
+git clone <repo-url> /srv/myapp && cd /srv/myapp
+cp .env.example .env && $EDITOR .env   # set strong passwords + SECRET_KEY
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### After first release (no source code needed on the server)
+
+```bash
+# On the server — only docker-compose.server.yml + .env needed
+mkdir /srv/myapp && cd /srv/myapp
+# copy docker-compose.server.yml and .env
+docker compose -f docker-compose.server.yml pull
+docker compose -f docker-compose.server.yml up -d
+```
+
+**Container names** (predictable for reverse-proxy config):
+- `<project>-db`, `<project>-backend`, `<project>-frontend`
+
+**Nginx Proxy Manager / Traefik / Caddy**: point to `<project>-frontend:80`.  
+The frontend exposes no host ports in `docker-compose.prod.yml` — join the proxy's Docker network
+or add `ports: ["127.0.0.1:8080:80"]` if you prefer a localhost-only host port.
+
+### Private seed data
+
+To pre-load data that must not be committed (personal info, pricing, etc.):
+
+```python
+# backend/private_seed.py  — listed in .gitignore, copy to server manually
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.models import SomeModel
+
+async def seed(db: AsyncSession) -> None:
+    db.add(SomeModel(name="Private record"))
+```
+
+Copy this file to the server alongside the compose file. It runs automatically after the standard seed.
 
 ## OpenAPI
 

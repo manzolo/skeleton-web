@@ -1,6 +1,9 @@
+name: skeleton-web
+
 services:
   db:
     image: postgres:16-alpine
+    container_name: skeleton-web-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,6 +22,7 @@ services:
       - skeleton_network
 
   backend:
+    container_name: skeleton-web-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -38,6 +42,7 @@ services:
       - skeleton_network
 
   frontend:
+    container_name: skeleton-web-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile

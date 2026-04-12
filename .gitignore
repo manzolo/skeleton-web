@@ -45,3 +45,8 @@ postgres-data/
 # Logs
 *.log
 logs/
+
+# Private seed data — project-specific data that must not be committed
+# (personal info, pricing, internal config, etc.)
+# See backend/src/seed.py for the pattern.
+backend/private_seed.py

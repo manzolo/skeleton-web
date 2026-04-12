@@ -8,6 +8,25 @@ Admin credentials:
   password : ADMIN_PASSWORD env var (default: changeme)
 
 CHANGE THE PASSWORD IN PRODUCTION via ADMIN_PASSWORD in .env
+
+────────────────────────────────────────────────────────────────────────────
+Private seed data (gitignored)
+────────────────────────────────────────────────────────────────────────────
+Projects built from this template often need to pre-load domain-specific
+data that shouldn't be committed (personally identifiable info, pricing,
+internal configuration, etc.).
+
+Pattern: create `backend/private_seed.py` (listed in .gitignore).
+Implement a single async function `seed(db: AsyncSession) -> None` there.
+It will be imported and called automatically after the standard seed runs.
+
+Example backend/private_seed.py:
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from src.models import SomeModel
+
+    async def seed(db: AsyncSession) -> None:
+        db.add(SomeModel(name="Internal record"))
+        # no commit needed — caller commits
 """
 
 import asyncio
@@ -73,6 +92,14 @@ async def _seed(db: AsyncSession) -> None:
             role_id=role.id,
         )
         db.add(admin)
+
+    # Optional: run private seed from gitignored backend/private_seed.py
+    try:
+        from private_seed import seed as private_seed  # type: ignore[import]
+        await private_seed(db)
+        print("[seed] private_seed.py applied")
+    except ModuleNotFoundError:
+        pass  # not present — skip silently
 
     await db.commit()
     print(f"[seed] Done — admin: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
