@@ -26,7 +26,12 @@ Calcola la nuova versione in base all'argomento:
 
 NEW_TAG = `v<nuova versione>` (es. `v0.1.2`)
 
-Mostra all'utente: "Bumping: vCORRENTE → NEW_TAG" e chiedi conferma prima di procedere.
+Mostra all'utente:
+```
+Bumping: vCORRENTE → NEW_TAG
+Procedi? [s/N]
+```
+Attendi la risposta. Procedi solo se l'utente risponde `s`, `si`, `y` o `yes`. Altrimenti annulla.
 
 ### 2. Aggiorna il file VERSION
 
@@ -94,8 +99,9 @@ Poi attendi il completamento:
 gh run watch <run-id> --exit-status
 ```
 
-Una volta che la CI è verde:
+Una volta che la CI è verde, aggiorna `APP_VERSION` nel `.env` del server e deploya:
 ```bash
+ssh root@home-server "sed -i 's/^APP_VERSION=.*/APP_VERSION=$NEW_TAG/' /srv/skeleton-web/.env"
 make deploy
 ```
 

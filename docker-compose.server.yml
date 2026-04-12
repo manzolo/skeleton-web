@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: manzolo/skeleton-web-backend:latest
+    image: manzolo/skeleton-web-backend:${APP_VERSION:-latest}
     container_name: skeleton-web-backend
     env_file: .env
     depends_on:
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: manzolo/skeleton-web-frontend:latest
+    image: manzolo/skeleton-web-frontend:${APP_VERSION:-latest}
     container_name: skeleton-web-frontend
     depends_on:
       backend:
