@@ -65,6 +65,11 @@ grep -r "skeleton" --include="*.yml" --include="*.env*" --include="*.py" --inclu
 .
 ├── backend/          FastAPI app (SQLAlchemy async, Alembic migrations)
 ├── frontend/         React 18 + Vite + TypeScript
+├── demos/
+│   └── products/     Example entity (Product) — full stack: model, router, tests, React page
+├── scripts/
+│   ├── demo-products.sh       Apply the Products demo (idempotent)
+│   └── demo-products-clean.sh Undo the Products demo
 ├── .claude/
 │   ├── settings.json Hook: auto-pytest on backend/src/ changes
 │   └── commands/
@@ -73,12 +78,30 @@ grep -r "skeleton" --include="*.yml" --include="*.env*" --include="*.py" --inclu
 ├── .github/workflows/
 │   ├── ci.yml        Container build + healthcheck on every push
 │   ├── test.yml      pytest + vitest on PR → main
-│   └── release.yml   Build + push images to GHCR & Docker Hub on tag v*
+│   ├── release.yml   Build + push images to GHCR & Docker Hub on tag v*
+│   └── demo.yml      Applies Products demo and smoke-tests the API
 ├── docker-compose.yml
 ├── docker-compose.prod.yml
 ├── Makefile
 └── docs/architecture.md
 ```
+
+### About the demo files
+
+`demos/products/` and `scripts/demo-products*.sh` are **reference examples** that ship with the template. They are not part of your application.
+
+When you start a real project, you have two options:
+
+- **Keep them** as a working reference while you build your first feature — run `make demo` to apply, `make demo-clean` to revert.
+- **Remove them** once you no longer need the example:
+
+```bash
+rm -rf demos/ scripts/ .github/workflows/demo.yml
+git rm -r demos/ scripts/ .github/workflows/demo.yml
+git commit -m "chore: remove demo scaffolding"
+```
+
+See [`docs/demo-products.md`](docs/demo-products.md) for a step-by-step walkthrough.
 
 ## Development commands
 
@@ -92,6 +115,8 @@ make seed         # re-run the seed (idempotent)
 make health       # curl /health
 make openapi      # export OpenAPI spec to docs/openapi.json
 make clean        # down -v + docker prune
+make demo         # apply Products demo (reference example)
+make demo-clean   # undo Products demo
 ```
 
 ## API
