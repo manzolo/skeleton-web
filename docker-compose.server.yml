@@ -64,6 +64,7 @@ services:
         condition: service_healthy
     networks:
       - skeleton_network
+      - proxy-net          # join the reverse proxy's Docker network
     restart: unless-stopped
 
 volumes:
@@ -72,3 +73,7 @@ volumes:
 networks:
   skeleton_network:
     driver: bridge
+  # The network your reverse proxy (nginx proxy manager, Traefik, Caddy…) uses.
+  # Change the name to match your setup, then point the proxy at skeleton-web-frontend:80.
+  proxy-net:
+    external: true
