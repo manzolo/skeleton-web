@@ -17,7 +17,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Build and start stack
-        run: docker compose -f docker-compose.yml up --build -d
+        run: docker compose -f docker-compose.yml up --build -d --wait
 
       - name: Run backend tests
         run: docker compose -f docker-compose.yml exec -T backend pytest tests/ -v --tb=short

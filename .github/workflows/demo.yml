@@ -93,4 +93,4 @@ jobs:
 
       - name: Show container logs on failure
         if: failure()
-        run: docker compose -f docker-compose.yml logs
+        run: docker compose logs
