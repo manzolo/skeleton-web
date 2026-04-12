@@ -21,6 +21,7 @@ services:
 
   backend:
     container_name: skeleton-web-backend
+    image: manzolo/skeleton-web-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -40,6 +41,7 @@ services:
 
   frontend:
     container_name: skeleton-web-frontend
+    image: manzolo/skeleton-web-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile

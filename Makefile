@@ -154,13 +154,17 @@ push:
 	docker push $(IMAGE_FRONTEND):latest
 	@printf "$(GREEN)Pushed$(RESET) $(IMAGE_BACKEND):latest and $(IMAGE_FRONTEND):latest\n"
 
-# SSH to the server, pull the latest images, and restart the stack.
+# Deploy to the server.
+# Copies docker-compose.server.yml to the server as docker-compose.yml so that
+# plain `docker compose` commands work there without any -f flag.
+# The server only needs docker-compose.yml + .env (no source code).
 # Usage:
 #   make deploy
 #   DEPLOY_HOST=user@myserver DEPLOY_DIR=/srv/myapp make deploy
 deploy:
+	scp docker-compose.server.yml $(DEPLOY_HOST):$(DEPLOY_DIR)/docker-compose.yml
 	ssh $(DEPLOY_HOST) "\
 	  cd $(DEPLOY_DIR) && \
-	  docker compose -f docker-compose.server.yml pull && \
-	  docker compose -f docker-compose.server.yml up -d --remove-orphans"
+	  docker compose pull && \
+	  docker compose up -d --remove-orphans"
 	@printf "$(GREEN)Deployed$(RESET) to $(DEPLOY_HOST):$(DEPLOY_DIR)\n"
