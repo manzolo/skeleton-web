@@ -26,12 +26,11 @@ Calcola la nuova versione in base all'argomento:
 
 NEW_TAG = `v<nuova versione>` (es. `v0.1.2`)
 
-Mostra all'utente:
-```
-Bumping: vCORRENTE → NEW_TAG
-Procedi? [s/N]
-```
-Attendi la risposta. Procedi solo se l'utente risponde `s`, `si`, `y` o `yes`. Altrimenti annulla.
+Usa il tool `AskUserQuestion` con:
+- `question`: `"Bumping: vCORRENTE → NEW_TAG — Procedi?"`
+- `options`: `["Sì", "No"]`
+
+Procedi solo se la risposta è `"Sì"`. Altrimenti annulla senza fare nulla.
 
 ### 2. Aggiorna il file VERSION
 
