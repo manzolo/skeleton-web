@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Server-side deploy — NO source code needed.
+# Uses pre-built images from Docker Hub published by the release CI/CD workflow.
+#
+# Release images are published when a git tag (v*) is pushed:
+#   /bump patch    →  builds + pushes manzolo/<repo>-{backend,frontend}:latest
+#
+# Setup on a new server (only these files needed):
+#   mkdir /srv/skeleton-web && cd /srv/skeleton-web
+#   curl -O https://raw.githubusercontent.com/manzolo/skeleton-web/main/docker-compose.server.yml
+#   curl -O https://raw.githubusercontent.com/manzolo/skeleton-web/main/.env.example
+#   cp .env.example .env && $EDITOR .env      # set strong passwords + SECRET_KEY
+#   docker compose -f docker-compose.server.yml pull
+#   docker compose -f docker-compose.server.yml up -d
+#
+# Reverse proxy (nginx proxy manager, Traefik, Caddy…):
+#   Point it at container  skeleton-web-frontend  on port 80.
+#   Join this compose to the proxy's network, or add a localhost-only port:
+#     ports: ["127.0.0.1:8080:80"]
+# ─────────────────────────────────────────────────────────────────────────────
+name: skeleton-web
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: skeleton-web-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - skeleton_network
+    restart: unless-stopped
+
+  backend:
+    image: manzolo/skeleton-web-backend:latest
+    container_name: skeleton-web-backend
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - skeleton_network
+    restart: unless-stopped
+
+  frontend:
+    image: manzolo/skeleton-web-frontend:latest
+    container_name: skeleton-web-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - skeleton_network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+
+networks:
+  skeleton_network:
+    driver: bridge

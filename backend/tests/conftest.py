@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import psycopg2
@@ -17,11 +18,16 @@ from src.models import Base
 _ALEMBIC_INI = str(Path(__file__).parent.parent / "alembic.ini")
 
 # Tests run against a dedicated test database — never touch the application DB.
-_DB_HOST = os.environ.get("DB_HOST", "db")
-_DB_USER = os.environ.get("DB_USER", "skeleton")
-_DB_PASS = os.environ.get("DB_PASS", "changeme")
-_DB_PORT = os.environ.get("DB_PORT", "5432")
-_TEST_DB = os.environ.get("TEST_POSTGRES_DB", "skeletondb_test")
+# Credentials are derived from DATABASE_URL so they stay in sync when the
+# project renames users/passwords. Override individual parts via env vars.
+_DB_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://skeleton:changeme@db:5432/skeletondb")
+_m = re.match(r"postgresql(?:\+\w+)?://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)", _DB_URL)
+_DB_USER = os.environ.get("DB_USER", _m.group(1) if _m else "skeleton")
+_DB_PASS = os.environ.get("DB_PASS", _m.group(2) if _m else "changeme")
+_DB_HOST = os.environ.get("DB_HOST", _m.group(3) if _m else "db")
+_DB_PORT = os.environ.get("DB_PORT", _m.group(4) if _m else "5432")
+_DB_NAME = _m.group(5) if _m else "skeletondb"
+_TEST_DB = os.environ.get("TEST_POSTGRES_DB", f"{_DB_NAME}_test")
 
 TEST_DATABASE_URL = f"postgresql+asyncpg://{_DB_USER}:{_DB_PASS}@{_DB_HOST}:{_DB_PORT}/{_TEST_DB}"
 SYNC_DATABASE_URL = f"postgresql://{_DB_USER}:{_DB_PASS}@{_DB_HOST}:{_DB_PORT}/{_TEST_DB}"
